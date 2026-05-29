@@ -14,11 +14,16 @@ Copy this Node's shape when a new Node mostly **saves and lists records** (rathe
 than doing relational queries) — it's the simplest path to multi-tenant hosting.
 
 ## Branding vs identifiers — IMPORTANT
-Display name is **"Election Watch"** everywhere a human reads it. But the internal
-**slug stays `capitalfm-verifier`** and storage stays `node_capitalfm_verifier_*`
-(activity log) / `node_capitalfm_verifier_store` (hosted store) — renaming them
-would orphan existing data. Don't "tidy" these. The canonical GitHub repo is
-`pauldevelopai/node-verifier` (the old `node-capitalfm-verifier` repo is dead).
+Display name is **"Election Watch"** everywhere a human reads it. The canonical
+GitHub repo is `pauldevelopai/node-verifier` (the old `node-capitalfm-verifier`
+repo is dead). Don't "tidy" the identifiers below — renaming orphans existing data.
+
+Storage prefix is derived from the **slug**, and the two entrypoints use DIFFERENT
+slugs, so the table/file names differ — this is intentional, leave it:
+- **LOCAL** (`index.js`) slug `capitalfm-verifier` → JSON files `node_capitalfm_verifier_*`
+  (e.g. `data/processed/node_capitalfm_verifier_activity.json`).
+- **HOSTED** (`server-hosted.js`) slug `verifier` → Postgres tables **`node_verifier_store`**
+  and **`node_verifier_activity`** (per-newsroom, scoped by `newsroom_id`).
 
 ## Two entrypoints, same handlers
 - **`index.js`** (LOCAL): `createLiteHost` + `createServer({ slug, host, handlers, displayName:"Election Watch" })`, then `mountListenerRoutes(app, () => host)` for the Listen-mode routes. Storage = JSON files, the user's own AI key.
@@ -31,7 +36,7 @@ Handlers (`lib/handlers.js`, `lib/verifier.js`, `lib/pages.js`, `lib/posts.js`,
 
 ## The host.store pattern (why this Node is the reference)
 All state is `host.store` collections — same API local (JSON files) and hosted
-(`node_capitalfm_verifier_store` Postgres table, per-newsroom):
+(`node_verifier_store` Postgres table, per-newsroom):
 - `claims` — verification results (keyed by timestamp, so `list` is chronological)
 - `corpus` — training examples (uploaded as text/files via `postIngest`)
 - `pages` — Listen-mode watchlist; `posts` — analysed posts; `briefs` — weekly briefs
